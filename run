@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+# shellcheck disable=SC1090
+# shellcheck disable=SC2001
+
+# Set strict bash mode
+set -euo pipefail
+
+# Default varable values
+TOOLBOX_LOG_LEVEL=${TOOLBOX_LOG_LEVEL:-INFO}
+export TOOLBOX_RUN=${TOOLBOX_RUN:-false}
+export TOOLBOX_DOCKER_SKIP=${TOOLBOX_DOCKER_SKIP:-false}
+TOOLBOX_TOOL_DIRS=${TOOLBOX_TOOL_DIRS:-toolbox}
+
+
+TOOLBOX_TOOL_EXEC_IN_DOCKER_FUNCTION=${TOOLBOX_TOOL_EXEC_IN_DOCKER_FUNCTION:-_exec_tool_in_docker}
+
+
+# Includes
+# https://stackoverflow.com/a/12694189
+INCLUDES_DIR="${BASH_SOURCE%/*}"
+if [[ ! -d "$INCLUDES_DIR" ]]; then INCLUDES_DIR="$PWD"; fi
+. "$INCLUDES_DIR/includes/util.sh"
+. "$INCLUDES_DIR/includes/docker.sh"
+
+# Trace with "-x" mode
+if [ "${TOOLBOX_LOG_LEVEL}" == "TRACE" ]; then
+  set -x
+fi
+
+
+# Decide about Docker mode
+if [ "${TOOLBOX_RUN}" == "false" ] && [ "${TOOLBOX_DOCKER_SKIP}" == "false" ]; then
+  if [ -f /.dockerenv ]; then
+    echo "Inside docker already, setting TOOLBOX_DOCKER_SKIP to true"
+    TOOLBOX_DOCKER_SKIP=true
+  fi
+fi
+
+
+CMD=${1}
+# Remove the first argument
+shift
+
+TOOL_PATH=${CMD:-}
+echo "TOOL_PATH: ${TOOL_PATH}"
+if [ ! -f "${TOOL_PATH}" ]; then
+  # Find tool path
+  for i in $(echo "$TOOLBOX_TOOL_DIRS" | sed "s/,/ /g")
+  do
+    _log DEBUG "Check if tool exists: $i/${CMD}"
+    if [[ -f "${i}/${CMD}" ]]; then
+      TOOL_PATH="${i}/${CMD}"
+      break
+    fi
+  done
+fi
+
+if [ -z "${TOOL_PATH}" ]; then
+  echo "Tool ${CMD} is not found"
+else
+  TOOLBOX_RUN=true
+  if [ "${TOOLBOX_DOCKER_SKIP}" == "true" ]; then
+    _exec_in_host "${TOOL_PATH}" "$@"
+  else
+    ${TOOLBOX_TOOL_EXEC_IN_DOCKER_FUNCTION} "${TOOL_PATH}" "$@"
+  fi
+fi
+
