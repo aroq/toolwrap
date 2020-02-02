@@ -69,30 +69,3 @@ function _exec_tool_in_docker {
 
   _exec_in_docker "$@"
 }
-
-function _exec_variant_tool_in_docker {
-  local variant_env_file
-  variant_env_file="$(mktemp)"
-  local _cmd
-  _cmd="$1"
-
-  TOOLBOX_DOCKER_RUN_TOOL_ENV_FILE=${TOOLBOX_DOCKER_RUN_TOOL_ENV_FILE:-}
-  (env | grep ^VARIANT_) >> "${variant_env_file}"
-  TOOLBOX_DOCKER_RUN_TOOL_ENV_FILE="${TOOLBOX_DOCKER_RUN_TOOL_ENV_FILE} --env-file=${variant_env_file}"
-  _log DEBUG "${YELLOW}'VARIANT_*' variable list - ${variant_env_file}:${RESTORE}"
-  _log DEBUG "$(cat "${variant_env_file}")"
-
-  local variant_env_file="toolbox/.toolbox/.tmp/.variant.vars.env"
-  docker run --rm -i -t -w "$(pwd)" \
-    -v "$(pwd):$(pwd)" aroq/toolbox \
-    sh -c "yq r -j ${_cmd} | jq -r '. | recurse(.tasks[]?) | select(.bindParamsFromEnv == true) | .parameters | .[]? | .name' | uniq > ${variant_env_file}"
-
-  _log DEBUG "${YELLOW}Variable list generated from the variant command - ${variant_env_file}:${RESTORE}"
-  _log DEBUG "$(cat ${variant_env_file})"
-
-  if [[ -f "${variant_env_file}" ]]; then
-    TOOLBOX_DOCKER_RUN_TOOL_ENV_FILE="${TOOLBOX_DOCKER_RUN_TOOL_ENV_FILE} --env-file ${variant_env_file}"
-  fi
-  _exec_tool_in_docker "$@"
-}
-
