@@ -25,7 +25,8 @@ function _exec_in_docker {
   if [ "${TOOLBOX_DOCKER_SSH_FORWARD}" == "true" ]; then
     case "$OSTYPE" in
       darwin*)  DOCKER_SSH_AUTH_SOCK_FORWARD_PARAMS=${DOCKER_SSH_AUTH_SOCK_FORWARD_PARAMS:---volumes-from=ssh-agent -e SSH_AUTH_SOCK=/.ssh-agent/socket} ;;
-      *)        DOCKER_SSH_AUTH_SOCK_FORWARD_PARAMS=${DOCKER_SSH_AUTH_SOCK_FORWARD_PARAMS:-} ;;
+      # *)        DOCKER_SSH_AUTH_SOCK_FORWARD_PARAMS=${DOCKER_SSH_AUTH_SOCK_FORWARD_PARAMS:-} ;;
+      darwin*)  DOCKER_SSH_AUTH_SOCK_FORWARD_PARAMS=${DOCKER_SSH_AUTH_SOCK_FORWARD_PARAMS:---volumes-from=ssh-agent -e SSH_AUTH_SOCK=/.ssh-agent/socket} ;;
     esac
 
   # Run additional docker container to mount SSH keys and provide volumes for othe containers
