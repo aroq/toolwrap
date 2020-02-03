@@ -20,4 +20,4 @@ if [[ ! -d "$SCRIPT_DIR" ]]; then SCRIPT_DIR="$PWD"; fi
 . "$SCRIPT_DIR/includes/util.sh"
 . "$SCRIPT_DIR/includes/docker.sh"
 
-_exec_tool "${1}"
+_exec_tool "${@}"
