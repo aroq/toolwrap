@@ -136,6 +136,3 @@ function _exec_tool() {
     fi
   fi
 }
-
-
-
